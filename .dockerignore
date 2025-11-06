@@ -1,0 +1,42 @@
+# Dépendances
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Fichiers d'environnement
+.env
+.env.*
+
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+README.md
+*.md
+
+# Fichiers de test
+test
+tests
+*.test.js
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Fichiers temporaires
+tmp
+temp
+

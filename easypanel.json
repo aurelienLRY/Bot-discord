@@ -1,0 +1,63 @@
+{
+  "name": "discord-bot",
+  "image": "node:18-alpine",
+  "buildType": "dockerfile",
+  "domains": [],
+  "env": [
+    {
+      "key": "DISCORD_TOKEN",
+      "value": "",
+      "description": "Token du bot Discord"
+    },
+    {
+      "key": "N8N_WEBHOOK",
+      "value": "",
+      "description": "URL du webhook n8n"
+    },
+    {
+      "key": "PORT",
+      "value": "3000",
+      "description": "Port du serveur HTTP"
+    },
+    {
+      "key": "NODE_ENV",
+      "value": "production",
+      "description": "Environnement d'exécution"
+    }
+  ],
+  "ports": [
+    {
+      "published": 3000,
+      "target": 3000,
+      "protocol": "http"
+    }
+  ],
+  "mounts": [],
+  "deploy": {
+    "replicas": 1,
+    "placement": {},
+    "restartPolicy": "unless-stopped",
+    "updateConfig": {
+      "parallelism": 1,
+      "order": "stop-first"
+    }
+  },
+  "healthCheck": {
+    "path": "/health",
+    "port": 3000,
+    "interval": 30,
+    "timeout": 10,
+    "retries": 3
+  },
+  "resources": {
+    "limits": {
+      "cpus": "0.5",
+      "memory": "512M"
+    },
+    "reservations": {
+      "cpus": "0.1",
+      "memory": "128M"
+    }
+  }
+}
+

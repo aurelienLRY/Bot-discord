@@ -1,0 +1,26 @@
+{
+  "name": "bot-discord",
+  "version": "2.0.0",
+  "description": "Bot Discord avec écoute permanente pour VPS Easypanel",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "check": "node check-config.js",
+    "docker:build": "docker build -t discord-bot .",
+    "docker:run": "docker-compose up -d",
+    "docker:stop": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "keywords": ["discord", "bot", "n8n", "webhook", "vps"],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "discord.js": "^14.24.0",
+    "dotenv": "^17.2.3"
+  }
+}

@@ -1,0 +1,50 @@
+name: Deploy to Easypanel
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run configuration check
+      env:
+        DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        N8N_WEBHOOK: ${{ secrets.N8N_WEBHOOK }}
+      run: node check-config.js
+    
+    - name: Trigger Easypanel Deployment
+      if: success()
+      run: |
+        if [ -n "${{ secrets.EASYPANEL_WEBHOOK_URL }}" ]; then
+          curl -X POST "${{ secrets.EASYPANEL_WEBHOOK_URL }}"
+          echo "✅ Déploiement déclenché sur Easypanel"
+        else
+          echo "⚠️  EASYPANEL_WEBHOOK_URL non configuré dans les secrets GitHub"
+          echo "   Configurez-le pour activer le déploiement automatique"
+        fi
+    
+    - name: Notification
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "🎉 Déploiement réussi !"
+        else
+          echo "❌ Échec du déploiement"
+          exit 1
+        fi
+
