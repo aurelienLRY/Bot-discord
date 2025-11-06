@@ -1,6 +1,8 @@
-# 🤖 Bot Discord avec Écoute Permanente
+# 🤖 Bot Discord Multi-Bots avec Dashboard
 
-Bot Discord optimisé pour une écoute permanente sur VPS avec Easypanel. Transmet tous les messages reçus vers un webhook n8n pour automatisation.
+Système multi-bots Discord optimisé pour VPS avec dashboard de monitoring. Gérez plusieurs bots, surveillez-les en temps réel, et automatisez via n8n.
+
+> 📚 **Nouveau sur le projet ?** Consultez **[INDEX.md](INDEX.md)** pour naviguer dans la documentation.
 
 ## ✨ Fonctionnalités
 
