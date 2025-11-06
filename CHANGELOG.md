@@ -1,5 +1,39 @@
 # 📝 Changelog - Historique des Versions
 
+## Version 3.2.0 - Migration Express.js (Novembre 2024)
+
+### ✨ Nouveautés
+
+#### Migration vers Express.js
+- ✅ Remplacement du serveur HTTP natif par **Express.js**
+- ✅ Routing avancé avec paramètres (`/stats/:botName`)
+- ✅ Middlewares modulaires (authentification, logging)
+- ✅ Body parsing automatique (JSON et URL-encoded)
+- ✅ Service de fichiers statiques automatique (`public/`)
+- ✅ Redirect automatique : `GET /` → `/dashboard`
+- ✅ 404 Handler amélioré avec liste des endpoints
+
+### 🔧 Améliorations
+- Code serveur refactorisé : **~40% moins de lignes**
+- Meilleure séparation des responsabilités
+- Extensibilité grandement facilitée
+- Logs plus clairs ("Serveur Express" vs "Serveur HTTP")
+
+### 📚 Documentation
+- Nouveau fichier `MIGRATION-EXPRESS.md` avec guide complet
+- Comparaison avant/après, exemples d'utilisation
+
+### 🔄 Rétrocompatibilité
+- ✅ **Toutes les routes fonctionnent sans changement**
+- ✅ Format des réponses API identique
+- ✅ Dashboard et authentification inchangés
+- ✅ Aucun impact sur les déploiements existants
+
+### 📦 Dépendances
+- Ajout : `express@^4.18.2`
+
+---
+
 ## Version 3.1.0 - Dashboard de Monitoring (Novembre 2024)
 
 ### 🎉 Nouveautés

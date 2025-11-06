@@ -1,12 +1,17 @@
 require('dotenv').config();
-const http = require('http');
-const fs = require('fs');
+const express = require('express');
 const path = require('path');
 const { Client, GatewayIntentBits } = require('discord.js');
 const axios = require('axios');
 
+const app = express();
 const PORT = process.env.PORT || 3000;
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
+
+// Middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Logger amélioré avec timestamps
 const log = {
@@ -308,30 +313,28 @@ function formatUptime(ms) {
 }
 
 // ============================================================================
-// FONCTIONS UTILITAIRES SERVEUR
+// MIDDLEWARES
 // ============================================================================
 
-// Vérifier l'authentification
-function checkAuth(req) {
+// Middleware d'authentification
+const authMiddleware = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  return authHeader === DASHBOARD_PASSWORD;
-}
+  if (authHeader !== DASHBOARD_PASSWORD) {
+    return res.status(401).json({ error: 'Non autorisé' });
+  }
+  next();
+};
 
-// Parser le body JSON des requêtes POST
-function parseBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => body += chunk.toString());
-    req.on('end', () => {
-      try {
-        resolve(JSON.parse(body));
-      } catch (e) {
-        resolve({});
-      }
-    });
-    req.on('error', reject);
-  });
-}
+// Middleware de logging des requêtes
+const requestLogger = (req, res, next) => {
+  const timestamp = new Date().toISOString();
+  log.info(`${req.method} ${req.url} - ${req.ip}`);
+  next();
+};
+
+// ============================================================================
+// FONCTIONS UTILITAIRES
+// ============================================================================
 
 // Obtenir les stats pour l'API
 function getStatsData() {
@@ -359,136 +362,131 @@ function getStatsData() {
 }
 
 // ============================================================================
-// SERVEUR HTTP - Dashboard, API et Health Check
+// ROUTES EXPRESS
 // ============================================================================
-const server = http.createServer(async (req, res) => {
-  const url = req.url;
-  const method = req.method;
-  
-  // ========== DASHBOARD HTML ==========
-  if (url === '/dashboard' || url === '/') {
-    const dashboardPath = path.join(__dirname, 'public', 'dashboard.html');
-    if (fs.existsSync(dashboardPath)) {
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      fs.createReadStream(dashboardPath).pipe(res);
-    } else {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Dashboard non trouvé. Créez le fichier public/dashboard.html');
+
+// Appliquer le middleware de logging (optionnel)
+// app.use(requestLogger);
+
+// ========== ROUTE : Racine / Dashboard ==========
+app.get('/', (req, res) => {
+  res.redirect('/dashboard');
+});
+
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'), (err) => {
+    if (err) {
+      res.status(404).json({ 
+        error: 'Dashboard non trouvé', 
+        message: 'Créez le fichier public/dashboard.html' 
+      });
     }
-    return;
-  }
+  });
+});
+
+// ========== ROUTES API ==========
+
+// API: Authentification (POST)
+app.post('/api/auth', (req, res) => {
+  const { password } = req.body;
   
-  // ========== API AUTHENTICATION ==========
-  if (url === '/api/auth' && method === 'POST') {
-    const body = await parseBody(req);
-    
-    if (body.password === DASHBOARD_PASSWORD) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, message: 'Authentifié' }));
-    } else {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, message: 'Mot de passe incorrect' }));
-    }
-    return;
+  if (password === DASHBOARD_PASSWORD) {
+    res.json({ success: true, message: 'Authentifié' });
+  } else {
+    res.status(401).json({ success: false, message: 'Mot de passe incorrect' });
   }
+});
+
+// API: Stats protégées (GET)
+app.get('/api/stats', authMiddleware, (req, res) => {
+  res.json(getStatsData());
+});
+
+// ========== ROUTES PUBLIQUES ==========
+
+// Health Check
+app.get('/health', (req, res) => {
+  const allBotsConnected = bots.every(bot => bot.client.isReady());
+  const anyBotConnected = bots.some(bot => bot.client.isReady());
   
-  // ========== API STATS (Protégé) ==========
-  if (url === '/api/stats') {
-    if (!checkAuth(req)) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Non autorisé' }));
-      return;
-    }
-    
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(getStatsData()));
-    return;
-  }
-  
-  // ========== HEALTH CHECK (Public) ==========
-  if (url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    
-    const allBotsConnected = bots.every(bot => bot.client.isReady());
-    const anyBotConnected = bots.some(bot => bot.client.isReady());
-    
-    const healthCheck = {
-      status: allBotsConnected ? 'OK' : (anyBotConnected ? 'PARTIAL' : 'STARTING'),
-      botsCount: bots.length,
-      botsConnected: bots.filter(bot => bot.client.isReady()).length,
-      bots: bots.map(bot => ({
-        name: bot.name,
-        tag: bot.client.user?.tag || 'connecting',
-        status: bot.stats.status,
-        isReady: bot.client.isReady()
-      })),
-      uptime: Math.floor(process.uptime()),
-      memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
-      timestamp: new Date().toISOString()
-    };
-    res.end(JSON.stringify(healthCheck, null, 2));
-    return;
-  }
-  
-  // ========== STATS JSON (Public) ==========
-  if (url === '/stats') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(getStatsData(), null, 2));
-    return;
-  }
-  
-  // ========== STATS PAR BOT ==========
-  if (url.startsWith('/stats/')) {
-    const botName = decodeURIComponent(url.split('/stats/')[1]);
-    const bot = bots.find(b => b.name === botName);
-    
-    if (bot) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(bot.getStats(), null, 2));
-    } else {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ 
-        error: 'Bot not found', 
-        availableBots: bots.map(b => b.name) 
-      }));
-    }
-    return;
-  }
-  
-  // ========== LISTE DES BOTS ==========
-  if (url === '/bots') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    const botsList = bots.map(bot => ({
+  const healthCheck = {
+    status: allBotsConnected ? 'OK' : (anyBotConnected ? 'PARTIAL' : 'STARTING'),
+    botsCount: bots.length,
+    botsConnected: bots.filter(bot => bot.client.isReady()).length,
+    bots: bots.map(bot => ({
       name: bot.name,
-      tag: bot.client.user?.tag || 'Not connected',
+      tag: bot.client.user?.tag || 'connecting',
       status: bot.stats.status,
-      isReady: bot.client.isReady(),
-      servers: bot.client.guilds.cache.size,
-      messagesProcessed: bot.stats.messagesProcessed
-    }));
-    res.end(JSON.stringify(botsList, null, 2));
-    return;
-  }
+      isReady: bot.client.isReady()
+    })),
+    uptime: Math.floor(process.uptime()),
+    memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+    timestamp: new Date().toISOString()
+  };
   
-  // ========== 404 ==========
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ 
-    error: 'Not Found', 
-    endpoints: [
-      '/dashboard - Dashboard visuel protégé',
-      '/health - Health check',
-      '/stats - Statistiques JSON',
-      '/bots - Liste des bots',
-      '/stats/:botName - Stats d\'un bot'
-    ] 
+  res.json(healthCheck);
+});
+
+// Statistiques complètes
+app.get('/stats', (req, res) => {
+  res.json(getStatsData());
+});
+
+// Liste des bots
+app.get('/bots', (req, res) => {
+  const botsList = bots.map(bot => ({
+    name: bot.name,
+    tag: bot.client.user?.tag || 'Not connected',
+    status: bot.stats.status,
+    isReady: bot.client.isReady(),
+    servers: bot.client.guilds.cache.size,
+    messagesProcessed: bot.stats.messagesProcessed
   }));
+  
+  res.json(botsList);
+});
+
+// Stats d'un bot spécifique
+app.get('/stats/:botName', (req, res) => {
+  const botName = decodeURIComponent(req.params.botName);
+  const bot = bots.find(b => b.name === botName);
+  
+  if (bot) {
+    res.json(bot.getStats());
+  } else {
+    res.status(404).json({ 
+      error: 'Bot not found', 
+      availableBots: bots.map(b => b.name) 
+    });
+  }
+});
+
+// ========== ROUTE 404 ==========
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Not Found',
+    message: `La route ${req.method} ${req.url} n'existe pas`,
+    endpoints: {
+      dashboard: '/dashboard - Dashboard visuel protégé',
+      api: {
+        auth: 'POST /api/auth - Authentification',
+        stats: 'GET /api/stats - Stats protégées'
+      },
+      public: {
+        health: 'GET /health - Health check',
+        stats: 'GET /stats - Statistiques complètes',
+        bots: 'GET /bots - Liste des bots',
+        botStats: 'GET /stats/:botName - Stats d\'un bot'
+      }
+    }
+  });
 });
 
 // ============================================================================
-// DÉMARRAGE DU SERVEUR HTTP
+// DÉMARRAGE DU SERVEUR EXPRESS
 // ============================================================================
-server.listen(PORT, () => {
-  log.success(`Serveur HTTP démarré sur le port ${PORT}`);
+const server = app.listen(PORT, () => {
+  log.success(`Serveur Express démarré sur le port ${PORT}`);
   log.info(`📊 Endpoints disponibles :`);
   log.info(`   • Dashboard : http://localhost:${PORT}/dashboard 🎨 (protégé)`);
   log.info(`   • Health check : http://localhost:${PORT}/health`);
@@ -504,9 +502,9 @@ server.listen(PORT, () => {
 async function gracefulShutdown(signal) {
   log.warn(`Signal ${signal} reçu, arrêt gracieux de tous les bots...`);
   
-  // Fermer le serveur HTTP
+  // Fermer le serveur Express
   server.close(() => {
-    log.info('✓ Serveur HTTP fermé');
+    log.info('✓ Serveur Express fermé');
   });
   
   // Déconnecter tous les bots

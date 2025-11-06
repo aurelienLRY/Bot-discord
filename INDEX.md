@@ -24,6 +24,9 @@ Guide de navigation pour toute la documentation du projet Bot Discord Multi-Bots
 ### Je veux la documentation complète
 → **[README.md](README.md)** - Documentation détaillée du projet
 
+### Je veux comprendre la migration Express.js
+→ **[MIGRATION-EXPRESS.md](MIGRATION-EXPRESS.md)** - Guide de migration v3.2.0
+
 ---
 
 ## 📖 Par Fichier
@@ -35,6 +38,7 @@ Guide de navigation pour toute la documentation du projet Bot Discord Multi-Bots
 | **MULTI-BOTS.md** | Guide multi-bots | Configuration de N bots |
 | **DASHBOARD.md** | Guide du dashboard | Monitoring visuel |
 | **DEPLOYMENT.md** | Déploiement Easypanel | Mise en production |
+| **MIGRATION-EXPRESS.md** | Migration Express.js | Comprendre v3.2.0 |
 | **CHANGELOG.md** | Historique versions | Voir les évolutions |
 | **INDEX.md** | Ce fichier | Navigation générale |
 
@@ -55,8 +59,9 @@ Guide de navigation pour toute la documentation du projet Bot Discord Multi-Bots
 
 ### 🔴 Avancé
 
-1. **[CHANGELOG.md](CHANGELOG.md)** - Comprendre l'architecture
-2. `index.js` - Code source principal
+1. **[MIGRATION-EXPRESS.md](MIGRATION-EXPRESS.md)** - Architecture Express.js
+2. **[CHANGELOG.md](CHANGELOG.md)** - Historique complet
+3. `index.js` - Code source principal
 
 ---
 
@@ -80,6 +85,7 @@ Guide de navigation pour toute la documentation du projet Bot Discord Multi-Bots
 ### Développement
 - `index.js` - Code principal
 - `check-config.js` - Validation configuration
+- **[MIGRATION-EXPRESS.md](MIGRATION-EXPRESS.md)** - Architecture Express
 - **[CHANGELOG.md](CHANGELOG.md)** - Historique
 
 ---
@@ -159,6 +165,7 @@ Bot-discord/
 │   ├── MULTI-BOTS.md       # Guide multi-bots
 │   ├── DASHBOARD.md        # Guide dashboard
 │   ├── DEPLOYMENT.md       # Guide déploiement
+│   ├── MIGRATION-EXPRESS.md # Migration Express v3.2.0
 │   ├── CHANGELOG.md        # Historique versions
 │   └── INDEX.md            # Ce fichier
 │
