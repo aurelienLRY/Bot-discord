@@ -54,7 +54,7 @@ if (!webhookUrl || webhookUrl === 'votre_url_webhook_ici') {
 log.info('🚀 Démarrage du Bot Discord...');
 
 // Events Discord
-client.on('ready', () => {
+client.on('clientReady', () => {
   log.success(`Bot connecté en tant que ${client.user.tag}`);
   log.info(`Connecté à ${client.guilds.cache.size} serveur(s)`);
   stats.reconnections++;
